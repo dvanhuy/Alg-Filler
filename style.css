@@ -1,0 +1,406 @@
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    background: #f3f5f9;
+    color: #182235;
+    font-family: Arial, sans-serif
+}
+
+header {
+    background: #202124;
+    color: white;
+    padding: 18px 24px;
+    font-size: 24px;
+    font-weight: bold
+}
+
+main {
+    max-width: 1600px;
+    margin: auto;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start
+}
+
+.panel {
+    background: white;
+    border: 1px solid #dce1e9;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+    min-width: 0
+}
+
+h2 {
+    font-size: 19px;
+    margin: 0 0 14px
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px
+}
+
+textarea,
+input[type=text] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd2df;
+    border-radius: 8px;
+    font-size: 15px
+}
+
+textarea {
+    min-height: 280px;
+    resize: vertical;
+    font-family: Consolas, monospace;
+    line-height: 1.7
+}
+
+input[type=text] {
+    font-family: Consolas, monospace
+}
+
+button {
+    padding: 10px 13px;
+    border: 1px solid #d1d8e3;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold
+}
+
+button:hover {
+    background: #edf2ff
+}
+
+.primary {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb
+}
+
+.primary:hover {
+    background: #1d4ed8
+}
+
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px
+}
+
+.hint {
+    font-size: 13px;
+    color: #68758a;
+    margin-top: 7px
+}
+
+.checks {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px
+}
+
+.checks label {
+    font-size: 14px;
+    font-weight: normal;
+    margin: 0
+}
+
+input[type=checkbox] {
+    margin-right: 7px
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+    margin: 14px 0
+}
+
+.stat {
+    background: #f4f7fc;
+    border: 1px solid #e0e6ef;
+    border-radius: 9px;
+    padding: 12px;
+    min-width: 0
+}
+
+.stat small {
+    display: block;
+    color: #64748b;
+    margin-bottom: 5px
+}
+
+.stat strong {
+    font-size: 27px;
+    overflow-wrap: anywhere
+}
+
+#message {
+    font-size: 14px;
+    color: #167044;
+    margin-top: 12px
+}
+
+#results {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px
+}
+
+.formula {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    padding: 10px;
+    border: 1px solid #e0e5ed;
+    border-radius: 8px;
+    background: #fbfcff
+}
+
+.number {
+    color: #8a94a6;
+    min-width: 25px;
+    padding-top: 4px
+}
+
+.alg {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font: 15px/1.7 Consolas, monospace
+}
+
+.copy-one {
+    font-size: 12px;
+    padding: 6px
+}
+
+#resultText {
+    min-height: 120px;
+    margin-top: 14px
+}
+
+.empty {
+    color: #68758a;
+    padding: 15px 0
+}
+
+#resultArea.hidden {
+    display: none
+}
+
+.panel-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.panel-title h2 {
+    margin: 0;
+}
+
+.panel-title button {
+    flex-shrink: 0;
+    min-width: 65px;
+}
+
+.collapsible-content.hidden {
+    display: none;
+}
+
+@media(max-width:850px) {
+    main {
+        grid-template-columns: 1fr;
+        padding: 10px
+    }
+
+    header {
+        font-size: 21px
+    }
+
+    .panel {
+        padding: 13px
+    }
+
+    .stat {
+        padding: 9px
+    }
+
+    .stat strong {
+        font-size: 22px
+    }
+}
+
+.floating-show-btn {
+    position: fixed;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 9999;
+    background: #2563eb;
+    color: white;
+    border: none;
+    box-shadow: 0 3px 12px #0002;
+}
+
+.floating-show-btn:hover {
+    background: #1d4ed8;
+}
+
+/* Khi ẩn một khung, bố cục tự căn giữa */
+main {
+  transition: grid-template-columns 0.2s ease;
+}
+
+main.center-layout {
+  grid-template-columns: minmax(0, 1000px);
+  justify-content: center;
+}
+
+/* Khu vực chứa các nút Hiện */
+#showDock {
+  position: fixed;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#showDock button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  box-shadow: 0 3px 12px #0003;
+}
+
+#showDock button:hover {
+  background: #1d4ed8;
+}
+
+@media (max-width: 850px) {
+  main.center-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+.range-slider {
+    position: relative;
+    height: 28px;
+    margin: 16px 8px;
+}
+
+.range-track,
+.range-selected {
+    position: absolute;
+    height: 6px;
+    top: 11px;
+    border-radius: 6px;
+}
+
+.range-track {
+    left: 0;
+    right: 0;
+    background: #d1d5db;
+}
+
+.range-selected {
+    background: #2563eb;
+}
+
+.range-slider input[type="range"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 28px;
+    margin: 0;
+    background: none;
+    pointer-events: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.range-slider input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: transparent;
+}
+
+.range-slider input[type="range"]::-moz-range-track {
+    height: 6px;
+    background: transparent;
+}
+
+.range-slider input[type="range"]::-webkit-slider-thumb {
+    pointer-events: auto;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -6px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb;
+    cursor: grab;
+}
+
+.range-slider input[type="range"]::-moz-range-thumb {
+    pointer-events: auto;
+    width: 14px;
+    height: 14px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb;
+    cursor: grab;
+}
+
+.length-values {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.length-filter details {
+    margin-top: 16px;
+}
+
+.weight-note,
+#lengthInfo {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.weight-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+
+.weight-table th,
+.weight-table td {
+    padding: 6px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+.weight-table input {
+    width: 55px;
+    padding: 5px;
+    text-align: center;
+}
