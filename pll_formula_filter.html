@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLL Formula Filter</title>
+<style>
+  :root { color-scheme: light; --blue:#2563eb; --border:#d7dce5; --muted:#64748b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f4f6fa; color:#172033; font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap { max-width:1100px; margin:28px auto; padding:0 16px 32px; }
+  h1 { margin:0 0 6px; font-size:clamp(25px,4vw,34px); }
+  .sub { color:var(--muted); margin:0 0 22px; }
+  .panel { background:#fff; border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 3px 12px #15213b08; }
+  label.title { display:block; font-weight:700; margin-bottom:8px; }
+  textarea { width:100%; min-height:220px; resize:vertical; padding:13px; border:1px solid #cbd2df; border-radius:9px; font:15px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace; outline:none; }
+  textarea:focus,input:focus { border-color:var(--blue); box-shadow:0 0 0 3px #2563eb1c; }
+  .filters { display:grid; grid-template-columns: minmax(0,1fr) auto; gap:14px; align-items:end; }
+  input[type=text] { width:100%; padding:11px 12px; border:1px solid #cbd2df; border-radius:9px; font:15px ui-monospace,monospace; }
+  .hint { color:var(--muted); font-size:13px; margin-top:6px; }
+  .checks { display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; }
+  .checks label { display:flex; align-items:center; gap:7px; font-size:14px; }
+  input[type=checkbox] { accent-color:var(--blue); width:16px; height:16px; }
+  .buttons { display:flex; flex-wrap:wrap; gap:9px; margin-top:16px; }
+  button { border:1px solid var(--border); border-radius:9px; padding:10px 15px; background:white; color:#172033; font-weight:650; cursor:pointer; }
+  button.primary { background:var(--blue); color:white; border-color:var(--blue); }
+  button:hover { filter:brightness(.97); }
+  .result-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .count { color:var(--muted); font-size:14px; }
+  .results { display:grid; gap:8px; margin-top:14px; }
+  .formula { display:flex; gap:12px; align-items:flex-start; border:1px solid #e0e5ed; border-radius:9px; padding:11px 12px; background:#fbfcff; }
+  .num { color:#8993a5; font:13px ui-monospace,monospace; min-width:25px; padding-top:2px; }
+  .alg { font:15px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace; overflow-wrap:anywhere; white-space:pre-wrap; flex:1; }
+  .copy-one { padding:5px 9px; font-size:12px; flex-shrink:0; }
+  .empty { color:var(--muted); padding:18px 4px; }
+  .status { min-height:22px; color:#167044; font-size:14px; margin-top:8px; }
+  @media(max-width:650px) { .filters { grid-template-columns:1fr; } .panel { padding:13px; } .formula { gap:7px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>PLL Formula Filter</h1>
+  <p class="sub">Dán công thức PLL vào ô lớn, mỗi công thức một dòng, rồi lọc bỏ các công thức chứa ký hiệu bạn không muốn.</p>
+
+  <section class="panel">
+    <label class="title" for="source">Danh sách công thức đầu vào</label>
+    <textarea id="source" spellcheck="false" placeholder="Ví dụ:
+x R' U R' D2 R U' R' D2 R2 x'
+y' x L2 D2 L' U' L D2 L' U' L'"></textarea>
+    <div class="hint">Giữ nguyên công thức và thứ tự các dòng. Dòng trống sẽ được bỏ qua.</div>
+  </section>
+
+  <section class="panel">
+    <div class="filters">
+      <div>
+        <label class="title" for="exclude">Ký hiệu cần loại bỏ</label>
+        <input id="exclude" type="text" value="x y z M E S" placeholder="Ví dụ: x y z M E S r">
+        <div class="hint">Nhập các ký hiệu cách nhau bằng dấu cách hoặc dấu phẩy. Ví dụ <code>x y z M E S r</code>. Ký hiệu được so khớp theo token, nên <code>R</code> không bị nhầm với <code>R'</code>.</div>
+      </div>
+      <div>
+        <button class="primary" id="filterBtn">Lọc công thức</button>
+      </div>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="ignoreCase"> Không phân biệt chữ hoa/thường</label>
+      <label><input type="checkbox" id="excludeLowercaseWide"> Loại cả xoay lớp rộng chữ thường (r, l, u, d, f, b)</label>
+      <label><input type="checkbox" id="excludePrimeVariants"> Nếu loại x thì loại cả x' và x2</label>
+    </div>
+    <div class="buttons">
+      <button class="primary" id="copyAll">Sao chép kết quả</button>
+      <button id="selectAll">Chọn toàn bộ kết quả</button>
+      <button id="clearInput">Xóa đầu vào</button>
+      <button id="reset">Đặt lại bộ lọc</button>
+    </div>
+    <div id="status" class="status" aria-live="polite"></div>
+  </section>
+
+  <section class="panel">
+    <div class="result-head">
+      <label class="title" style="margin:0">Công thức sau khi lọc</label>
+      <span class="count" id="count">0 công thức được giữ lại · 0 bị loại</span>
+    </div>
+    <div id="results" class="results"><div class="empty">Dán công thức rồi bấm “Lọc công thức”.</div></div>
+    <textarea id="resultText" aria-label="Kết quả dạng văn bản" readonly style="min-height:100px;margin-top:14px;display:none"></textarea>
+  </section>
+</div>
+<script>
+(() => {
+  const source = document.getElementById('source');
+  const exclude = document.getElementById('exclude');
+  const results = document.getElementById('results');
+  const count = document.getElementById('count');
+  const status = document.getElementById('status');
+  const resultText = document.getElementById('resultText');
+  let kept = [];
+
+  function tokenizeMoves(line) {
+    // Cube notation tokens: R, R', R2, r, r', x, M2, etc.
+    return line.match(/[A-Za-z]+(?:2|')?|[^\s]+/g) || [];
+  }
+
+  function getExcluded() {
+    let raw = exclude.value.trim();
+    let items = raw ? raw.split(/[,\s]+/).filter(Boolean) : [];
+    if (document.getElementById('excludePrimeVariants').checked) {
+      items = items.flatMap(item => {
+        const base = item.replace(/(?:2|')+$/g, '');
+        return [item, base, base + "'", base + '2'];
+      });
+    }
+    if (document.getElementById('excludeLowercaseWide').checked) {
+      items.push('r', 'l', 'u', 'd', 'f', 'b');
+    }
+    const insensitive = document.getElementById('ignoreCase').checked;
+    return new Set(items.map(x => insensitive ? x.toLowerCase() : x));
+  }
+
+  function filter() {
+    const lines = source.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    const banned = getExcluded();
+    const insensitive = document.getElementById('ignoreCase').checked;
+    const rejected = [];
+    kept = [];
+    for (const line of lines) {
+      const tokens = tokenizeMoves(line);
+      const hasBanned = tokens.some(token => banned.has(insensitive ? token.toLowerCase() : token));
+      (hasBanned ? rejected : kept).push(line);
+    }
+    results.replaceChildren();
+    if (!kept.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = lines.length ? 'Không có công thức nào phù hợp với bộ lọc.' : 'Dán công thức rồi bấm “Lọc công thức”.';
+      results.appendChild(empty);
+    } else {
+      kept.forEach((line, i) => {
+        const row = document.createElement('div');
+        row.className = 'formula';
+        const num = document.createElement('span');
+        num.className = 'num';
+        num.textContent = String(i + 1).padStart(2, '0');
+        const alg = document.createElement('span');
+        alg.className = 'alg';
+        alg.textContent = line;
+        const copy = document.createElement('button');
+        copy.className = 'copy-one';
+        copy.textContent = 'Sao chép';
+        copy.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(line); status.textContent = 'Đã sao chép 1 công thức.'; }
+          catch { status.textContent = 'Trình duyệt không cho sao chép tự động; hãy chọn và sao chép công thức.'; }
+        });
+        row.append(num, alg, copy);
+        results.appendChild(row);
+      });
+    }
+    count.textContent = `${kept.length} công thức được giữ lại · ${rejected.length} bị loại`;
+    resultText.value = kept.join('\n');
+    resultText.style.display = kept.length ? 'block' : 'none';
+    status.textContent = `Đã lọc ${lines.length} công thức.`;
+  }
+
+  document.getElementById('filterBtn').addEventListener('click', filter);
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    if (!kept.length) { status.textContent = 'Chưa có kết quả để sao chép.'; return; }
+    try { await navigator.clipboard.writeText(kept.join('\n')); status.textContent = `Đã sao chép ${kept.length} công thức.`; }
+    catch { resultText.style.display = 'block'; resultText.focus(); resultText.select(); status.textContent = 'Đã chọn toàn bộ kết quả; nhấn Ctrl+C để sao chép.'; }
+  });
+  document.getElementById('selectAll').addEventListener('click', () => {
+    if (!kept.length) { status.textContent = 'Chưa có kết quả để chọn.'; return; }
+    resultText.style.display = 'block'; resultText.focus(); resultText.select();
+    status.textContent = 'Đã chọn toàn bộ kết quả; nhấn Ctrl+C để sao chép.';
+  });
+  document.getElementById('clearInput').addEventListener('click', () => {
+    source.value = ''; kept = []; results.innerHTML = '<div class="empty">Dán công thức rồi bấm “Lọc công thức”.</div>';
+    count.textContent = '0 công thức được giữ lại · 0 bị loại'; resultText.value = ''; resultText.style.display = 'none'; status.textContent = '';
+    source.focus();
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    exclude.value = 'x y z M E S';
+    document.getElementById('ignoreCase').checked = false;
+    document.getElementById('excludeLowercaseWide').checked = false;
+    document.getElementById('excludePrimeVariants').checked = false;
+    filter();
+  });
+  source.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') filter();
+  });
+})();
+</script>
+</body>
+</html>
